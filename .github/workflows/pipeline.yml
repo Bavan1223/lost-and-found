@@ -1,0 +1,82 @@
+# =============================================
+# .github/workflows/pipeline.yml
+# GitHub Actions CI/CD Pipeline
+# =============================================
+#
+# WHAT IS THIS FILE?
+# GitHub reads this YAML file automatically when you push code.
+# It defines automated jobs that run in the cloud.
+#
+# YAML = Yet Another Markup Language
+# Indentation is CRITICAL in YAML — 2 spaces, never tabs
+#
+# HOW IT WORKS:
+# You push code → GitHub detects push → Reads this file
+# → Spins up a fresh Ubuntu virtual machine (runner)
+# → Runs each step in order → Reports pass/fail
+# =============================================
+
+name: Campus Lost & Found CI/CD
+
+# TRIGGERS — when does this pipeline run?
+on:
+  push:
+    branches: [main, develop]   # On push to main or develop
+  pull_request:
+    branches: [main]            # On PRs targeting main
+
+jobs:
+  # =============================================
+  # JOB 1: TEST
+  # Runs tests on every push
+  # =============================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest      # Use latest Ubuntu virtual machine
+
+    steps:
+      # Step 1: Get the code onto the runner
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'          # Cache node_modules for speed
+
+      # Step 3: Install dependencies
+      - name: Install Dependencies
+        run: npm ci              # ci = clean install (faster, more strict than npm install)
+
+      # Step 4: Run tests
+      # env: injects secrets as environment variables
+      # ${{ secrets.NAME }} pulls from GitHub repo Settings → Secrets
+      - name: Run Tests
+        run: npm test
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NODE_ENV: test
+
+  # =============================================
+  # JOB 2: DEPLOY
+  # Only runs if tests pass AND we're on main branch
+  # =============================================
+  deploy:
+    name: Deploy to Render
+    needs: test                  # Must pass test job first
+    runs-on: ubuntu-latest
+    
+    # Only deploy from main branch (not develop or PRs)
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Trigger Render Deployment
+        # Render provides a deploy hook URL
+        # Calling it (HTTP POST) triggers a new deployment
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+          echo "✅ Deployment triggered on Render.com"

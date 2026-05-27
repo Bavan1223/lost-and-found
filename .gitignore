@@ -1,0 +1,24 @@
+# Dependencies — never push this (can be 200MB+)
+node_modules/
+
+# Secrets — NEVER push this to GitHub
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build output
+dist/
+build/
+
+# Test coverage
+coverage/
+
+# IDE files
+.vscode/
+.idea/
