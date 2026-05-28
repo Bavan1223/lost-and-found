@@ -160,6 +160,17 @@ app.use('/api/lost', requireDB, lostRoutes);                // /api/lost, /api/l
 app.use('/api/found', requireDB, foundRoutes);              // /api/found, /api/found/:id
 app.use('/api/ai', requireDB, aiLimiter, aiRoutes);         // /api/ai/match, /api/ai/describe
 
+// Health check — must be BEFORE 404 handler
+// Returns 200 if DB connected, 503 if not
+app.get('/api/health', (req, res) => {
+  res.status(dbConnected ? 200 : 503).json({
+    success: dbConnected,
+    server: 'online',
+    database: dbConnected ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // =============================================
 // 404 HANDLER
 // =============================================
@@ -200,16 +211,7 @@ const PORT = process.env.PORT || 5000;
 // Real-world apps do this — a dead DB shouldn't take the whole API offline
 let dbConnected = false;
 
-// Add a DB status check to the health route
-// Overwrite the earlier health check with a richer one
-app.get('/api/health', (req, res) => {
-  res.status(dbConnected ? 200 : 503).json({
-    success: dbConnected,
-    server: 'online',
-    database: dbConnected ? 'connected' : 'disconnected — fix your Atlas IP whitelist',
-    timestamp: new Date().toISOString(),
-  });
-});
+
 
 const startServer = async () => {
   // Start listening FIRST — server is immediately available
