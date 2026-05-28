@@ -27,7 +27,7 @@ router.get('/:id', getLostItemById);
 
 // Protected — must be logged in to report/modify
 // Order: auth → validate → upload → controller
-router.post('/', protect, validateLostItem, upload.single('image'), createLostItem);
+router.post('/', protect, upload.single('image'), validateLostItem, createLostItem);
 router.put('/:id', protect, upload.single('image'), updateLostItem);
 router.delete('/:id', protect, deleteLostItem);
 

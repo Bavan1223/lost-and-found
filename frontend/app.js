@@ -199,7 +199,7 @@ function renderItemCard(item, type) {
       <div class="item-desc">${escapeHtml(item.description)}</div>
       <div class="item-footer">
         <span style="font-size:0.8rem;color:var(--text-muted)">By ${escapeHtml(reporter)}</span>
-        ${type === 'lost' && token ? `<button class="btn btn-sm btn-primary" onclick="aiMatch('${item._id}')">🤖 AI Match</button>` : ''}
+        ${type === 'lost' && token ? `<button class="btn btn-sm btn-primary btn-ai-match" data-item-id="${item._id}">🤖 AI Match</button>` : ''}
       </div>
     </div>`;
 }
@@ -438,6 +438,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Filter chips
   $$('.filter-chip').forEach(c => {
     c.addEventListener('click', () => setLostFilter(c.dataset.cat));
+  });
+
+  // Delegated click handler for dynamically created AI match buttons
+  document.addEventListener('click', (e) => {
+    const matchBtn = e.target.closest('.btn-ai-match');
+    if (matchBtn) aiMatch(matchBtn.dataset.itemId);
+
+    const navBtn = e.target.closest('[data-nav]');
+    if (navBtn) navigate(navBtn.dataset.nav);
   });
 
   updateUI();

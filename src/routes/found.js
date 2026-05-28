@@ -20,12 +20,14 @@ const {
 const protect = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
+const { validateFoundItem } = require('../middleware/validate');
+
 // Public — anyone can VIEW found items
 router.get('/', getAllFoundItems);
 router.get('/:id', getFoundItemById);
 
 // Protected — must be logged in to report/modify
-router.post('/', protect, upload.single('image'), createFoundItem);
+router.post('/', protect, upload.single('image'), validateFoundItem, createFoundItem);
 router.put('/:id', protect, upload.single('image'), updateFoundItem);
 router.delete('/:id', protect, deleteFoundItem);
 

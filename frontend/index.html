@@ -113,7 +113,7 @@
         <h1 class="section-title">Lost Items</h1>
         <p class="section-desc">Browse all reported lost items</p>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="navigate('report-lost')">+ Report Lost</button>
+      <button class="btn btn-primary btn-sm" data-nav="report-lost">+ Report Lost</button>
     </div>
     <div class="filters">
       <button class="filter-chip" data-cat="electronics">💻 Electronics</button>
@@ -136,7 +136,7 @@
         <h1 class="section-title">Found Items</h1>
         <p class="section-desc">Browse all reported found items</p>
       </div>
-      <button class="btn btn-success btn-sm" onclick="navigate('report-found')">+ Report Found</button>
+      <button class="btn btn-success btn-sm" data-nav="report-found">+ Report Found</button>
     </div>
     <div class="grid grid-2" id="found-grid">
       <p class="loading-text"><span class="spinner"></span> Loading...</p>

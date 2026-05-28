@@ -88,6 +88,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve the frontend static files
 app.use(express.static(path.join(__dirname, 'frontend')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // =============================================
 // RATE LIMITING
