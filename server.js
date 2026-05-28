@@ -20,6 +20,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const path = require('path');
 const fs = require('fs'); // Node.js built-in file system module
 
 // Auto-create the uploads/ directory if it doesn't exist
@@ -67,7 +68,7 @@ app.use(helmet());
 // Without this, browsers block requests from other origins
 // ANALOGY: The guest list — only approved visitors get in
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:4000',
+  origin: [process.env.CLIENT_URL || 'http://localhost:4000', 'http://localhost:5000', 'http://127.0.0.1:5000'],
   credentials: true, // Allow cookies/auth headers
 }));
 
@@ -84,6 +85,9 @@ app.use(express.json({ limit: '10mb' }));
 // express.urlencoded() parses form data
 // extended: true allows nested objects in form data
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve the frontend static files
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // =============================================
 // RATE LIMITING

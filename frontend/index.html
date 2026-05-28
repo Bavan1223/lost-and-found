@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI-powered Campus Lost & Found platform — report, search, and intelligently match lost and found items.">
+  <title>Campus Lost & Found — AI Platform</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ==================== NAVBAR ==================== -->
+<nav class="navbar">
+  <div class="navbar-brand">🎒 Campus L&F</div>
+
+  <ul class="nav-links" id="auth-nav">
+    <li><a href="#" data-page="login" class="active">Sign In</a></li>
+    <li><a href="#" data-page="register">Register</a></li>
+  </ul>
+
+  <ul class="nav-links" id="app-nav" style="display:none">
+    <li><a href="#" data-page="dashboard" class="active">Dashboard</a></li>
+    <li><a href="#" data-page="lost">Lost Items</a></li>
+    <li><a href="#" data-page="found">Found Items</a></li>
+    <li><a href="#" data-page="report-lost">Report Lost</a></li>
+    <li><a href="#" data-page="report-found">Report Found</a></li>
+    <li><a href="#" data-page="ai">🤖 AI Tools</a></li>
+    <li><a href="#" data-page="logout" style="color:var(--danger)">Logout</a></li>
+  </ul>
+
+  <div class="nav-user" id="user-info" style="display:none">
+    <div class="avatar" id="user-avatar">B</div>
+    <span id="user-name">User</span>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ==================== LOGIN PAGE ==================== -->
+  <div class="page active" id="page-login">
+    <div class="auth-container">
+      <div class="card">
+        <h2 class="auth-title">Welcome Back 👋</h2>
+        <p class="auth-subtitle">Sign in to your campus account</p>
+        <form id="form-login">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email</label>
+            <input class="form-input" type="email" id="login-email" placeholder="you@campus.edu" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <input class="form-input" type="password" id="login-password" placeholder="••••••••" required minlength="6">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+        </form>
+        <div class="auth-switch">Don't have an account? <a data-switch="register">Register</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== REGISTER PAGE ==================== -->
+  <div class="page" id="page-register">
+    <div class="auth-container">
+      <div class="card">
+        <h2 class="auth-title">Create Account 🎓</h2>
+        <p class="auth-subtitle">Join the campus lost & found community</p>
+        <form id="form-register">
+          <div class="form-group">
+            <label class="form-label" for="reg-name">Full Name</label>
+            <input class="form-input" type="text" id="reg-name" placeholder="Your name" required minlength="2">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-email">Campus Email</label>
+            <input class="form-input" type="email" id="reg-email" placeholder="you@campus.edu" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-password">Password</label>
+            <input class="form-input" type="password" id="reg-password" placeholder="Min 6 characters" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-studentid">Student ID (optional)</label>
+            <input class="form-input" type="text" id="reg-studentid" placeholder="STU2024">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+        </form>
+        <div class="auth-switch">Already have an account? <a data-switch="login">Sign In</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div class="page" id="page-dashboard">
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">Dashboard</h1>
+        <p class="section-desc">Overview of campus lost & found activity</p>
+      </div>
+      <span id="db-status" class="badge badge-pending">Checking...</span>
+    </div>
+    <div class="stats-row" id="dashboard-stats">
+      <div class="stat-card"><div class="stat-value">—</div><div class="stat-label">Loading...</div></div>
+    </div>
+    <h3 style="margin-bottom:1rem;font-size:1.1rem">Recent Reports</h3>
+    <div class="grid grid-3" id="dashboard-recent">
+      <p class="loading-text"><span class="spinner"></span> Loading...</p>
+    </div>
+  </div>
+
+  <!-- ==================== LOST ITEMS ==================== -->
+  <div class="page" id="page-lost">
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">Lost Items</h1>
+        <p class="section-desc">Browse all reported lost items</p>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="navigate('report-lost')">+ Report Lost</button>
+    </div>
+    <div class="filters">
+      <button class="filter-chip" data-cat="electronics">💻 Electronics</button>
+      <button class="filter-chip" data-cat="clothing">👕 Clothing</button>
+      <button class="filter-chip" data-cat="accessories">⌚ Accessories</button>
+      <button class="filter-chip" data-cat="books">📚 Books</button>
+      <button class="filter-chip" data-cat="keys">🔑 Keys</button>
+      <button class="filter-chip" data-cat="wallet">👛 Wallet</button>
+      <button class="filter-chip" data-cat="bag">🎒 Bag</button>
+    </div>
+    <div class="grid grid-2" id="lost-grid">
+      <p class="loading-text"><span class="spinner"></span> Loading...</p>
+    </div>
+  </div>
+
+  <!-- ==================== FOUND ITEMS ==================== -->
+  <div class="page" id="page-found">
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">Found Items</h1>
+        <p class="section-desc">Browse all reported found items</p>
+      </div>
+      <button class="btn btn-success btn-sm" onclick="navigate('report-found')">+ Report Found</button>
+    </div>
+    <div class="grid grid-2" id="found-grid">
+      <p class="loading-text"><span class="spinner"></span> Loading...</p>
+    </div>
+  </div>
+
+  <!-- ==================== REPORT LOST ==================== -->
+  <div class="page" id="page-report-lost">
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">Report Lost Item</h1>
+        <p class="section-desc">Fill in the details of your lost item</p>
+      </div>
+    </div>
+    <div class="card" style="max-width:650px">
+      <form id="form-report-lost">
+        <div class="form-group">
+          <label class="form-label" for="rl-title">Item Title</label>
+          <input class="form-input" type="text" id="rl-title" placeholder="e.g. Black AirPods Pro" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="rl-desc">Description</label>
+          <textarea class="form-textarea" id="rl-desc" placeholder="Describe your item in detail..." required></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="rl-category">Category</label>
+            <select class="form-select" id="rl-category" required>
+              <option value="">Select...</option>
+              <option value="electronics">Electronics</option>
+              <option value="clothing">Clothing</option>
+              <option value="accessories">Accessories</option>
+              <option value="books">Books</option>
+              <option value="keys">Keys</option>
+              <option value="wallet">Wallet</option>
+              <option value="bag">Bag</option>
+              <option value="sports">Sports</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="rl-location">Last Seen Location</label>
+            <input class="form-input" type="text" id="rl-location" placeholder="e.g. Main Library" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="rl-date">Date Lost</label>
+            <input class="form-input" type="date" id="rl-date">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="rl-email">Contact Email (optional)</label>
+            <input class="form-input" type="email" id="rl-email" placeholder="your@email.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="rl-tags">Tags (comma separated)</label>
+          <input class="form-input" type="text" id="rl-tags" placeholder="e.g. black, apple, wireless">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">📋 Report Lost Item</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== REPORT FOUND ==================== -->
+  <div class="page" id="page-report-found">
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">Report Found Item</h1>
+        <p class="section-desc">Help someone get their item back</p>
+      </div>
+    </div>
+    <div class="card" style="max-width:650px">
+      <form id="form-report-found">
+        <div class="form-group">
+          <label class="form-label" for="rf-title">Item Title</label>
+          <input class="form-input" type="text" id="rf-title" placeholder="e.g. Blue Water Bottle" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="rf-desc">Description</label>
+          <textarea class="form-textarea" id="rf-desc" placeholder="Describe the item you found..." required></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="rf-category">Category</label>
+            <select class="form-select" id="rf-category" required>
+              <option value="">Select...</option>
+              <option value="electronics">Electronics</option>
+              <option value="clothing">Clothing</option>
+              <option value="accessories">Accessories</option>
+              <option value="books">Books</option>
+              <option value="keys">Keys</option>
+              <option value="wallet">Wallet</option>
+              <option value="bag">Bag</option>
+              <option value="sports">Sports</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="rf-location">Where Found</label>
+            <input class="form-input" type="text" id="rf-location" placeholder="e.g. Cafeteria" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="rf-date">Date Found</label>
+          <input class="form-input" type="date" id="rf-date">
+        </div>
+        <button type="submit" class="btn btn-success btn-block">📦 Report Found Item</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== AI TOOLS ==================== -->
+  <div class="page" id="page-ai">
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">🤖 AI Tools</h1>
+        <p class="section-desc">Powered by Google Gemini 1.5 Flash</p>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <!-- AI Describe -->
+      <div class="card">
+        <h3 class="card-title" style="margin-bottom:1rem">✨ Description Enhancer</h3>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem">Turn a vague description into a detailed, searchable one.</p>
+        <form id="form-ai-describe">
+          <div class="form-group">
+            <label class="form-label" for="aid-title">Item Title</label>
+            <input class="form-input" type="text" id="aid-title" placeholder="e.g. AirPods">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="aid-desc">Rough Description</label>
+            <textarea class="form-textarea" id="aid-desc" placeholder="e.g. white earbuds lost in library" required style="min-height:70px"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="aid-category">Category</label>
+            <select class="form-select" id="aid-category">
+              <option value="">Any</option>
+              <option value="electronics">Electronics</option>
+              <option value="clothing">Clothing</option>
+              <option value="accessories">Accessories</option>
+              <option value="books">Books</option>
+              <option value="keys">Keys</option>
+              <option value="wallet">Wallet</option>
+              <option value="bag">Bag</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-sm">✨ Enhance Description</button>
+        </form>
+        <div id="ai-describe-result"></div>
+      </div>
+
+      <!-- AI Ask -->
+      <div class="card">
+        <h3 class="card-title" style="margin-bottom:1rem">💬 Ask AI Assistant</h3>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem">Ask anything about campus lost & found.</p>
+        <div class="ai-chat-box" id="ai-chat-box">
+          <div class="chat-msg chat-ai">Hi! I'm your campus lost & found assistant. Ask me anything — tips for finding items, best locations to check, etc.</div>
+        </div>
+        <form id="form-ai-ask" style="display:flex;gap:0.5rem;margin-top:0.75rem">
+          <input class="form-input" type="text" id="ai-question" placeholder="Type your question..." required style="flex:1">
+          <button type="submit" class="btn btn-primary btn-sm">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- AI Match Results -->
+    <div id="ai-match-results" style="margin-top:1.5rem"></div>
+  </div>
+
+</div>
+
+<div class="toast-container"></div>
+<script src="app.js"></script>
+</body>
+</html>
