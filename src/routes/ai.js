@@ -2,9 +2,9 @@
 // src/routes/ai.js — AI-Powered Routes
 // =============================================
 // Routes: POST /api/ai/match          → match lost vs found
-//         GET  /api/ai/suggestions/:id → top 3 matches for item
-//         POST /api/ai/describe        → enhance a description
-//         POST /api/ai/ask             → ask AI about items
+//         GET  /api/ai/suggestions/:id → top matches for a lost item
+//         POST /api/ai/describe        → enhance item description
+//         POST /api/ai/ask             → free-form AI Q&A
 // =============================================
 
 const express = require('express');
@@ -16,12 +16,26 @@ const {
   askAI,
 } = require('../controllers/aiController');
 const protect = require('../middleware/auth');
+const {
+  validateMatchRequest,
+  validateDescribeRequest,
+  validateAskRequest,
+} = require('../middleware/validate');
 
 // All AI routes require authentication
-// (AI calls cost money — we only allow logged-in users)
-router.post('/match', protect, matchItems);
-router.get('/suggestions/:id', protect, getSuggestions);
-router.post('/describe', protect, enhanceDescription);
-router.post('/ask', protect, askAI);
+// (prevents API key abuse by unauthenticated users)
+router.use(protect);
+
+// POST /api/ai/match — find matches for a specific lost item
+router.post('/match', validateMatchRequest, matchItems);
+
+// GET /api/ai/suggestions/:id — quick suggestions by lost item ID
+router.get('/suggestions/:id', getSuggestions);
+
+// POST /api/ai/describe — enhance item description using AI
+router.post('/describe', validateDescribeRequest, enhanceDescription);
+
+// POST /api/ai/ask — free-form AI Q&A
+router.post('/ask', validateAskRequest, askAI);
 
 module.exports = router;

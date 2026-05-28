@@ -19,13 +19,15 @@ const {
 } = require('../controllers/lostController');
 const protect = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { validateLostItem } = require('../middleware/validate');
 
 // Public — anyone can VIEW lost items (no login needed to browse)
 router.get('/', getAllLostItems);
 router.get('/:id', getLostItemById);
 
 // Protected — must be logged in to report/modify
-router.post('/', protect, upload.single('image'), createLostItem);
+// Order: auth → validate → upload → controller
+router.post('/', protect, validateLostItem, upload.single('image'), createLostItem);
 router.put('/:id', protect, upload.single('image'), updateLostItem);
 router.delete('/:id', protect, deleteLostItem);
 
