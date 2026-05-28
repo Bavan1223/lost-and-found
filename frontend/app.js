@@ -184,6 +184,9 @@ function renderItemCard(item, type) {
   const dateField = type === 'lost' ? item.dateLost : item.dateFound;
   const dateLabel = type === 'lost' ? 'Lost' : 'Found';
   const reporter = item.reportedBy?.name || 'Unknown';
+  const imgHtml = item.image 
+    ? `<div style="margin-bottom:0.75rem;"><img src="/${item.image.replace(/\\/g, '/')}" style="max-width:100%; max-height:160px; border-radius:var(--radius-sm); object-fit:cover; display:block; border:1px solid var(--border)"></div>` 
+    : '';
 
   return `
     <div class="card item-card">
@@ -191,9 +194,10 @@ function renderItemCard(item, type) {
         <span class="card-title">${escapeHtml(item.title)}</span>
         <span class="badge ${statusClass}">${item.status}</span>
       </div>
+      ${imgHtml}
       <div class="item-meta">
         <span>📁 <span class="badge badge-category">${item.category}</span></span>
-        <span>📍 ${escapeHtml(item.location)}</span>
+        <span>📍 ${escapeHtml(item.location || item.locationFound || '')}</span>
         <span>📅 ${dateField ? new Date(dateField).toLocaleDateString() : 'N/A'}</span>
       </div>
       <div class="item-desc">${escapeHtml(item.description)}</div>
@@ -254,19 +258,30 @@ async function handleReportLost(e) {
   btn.innerHTML = '<span class="spinner"></span> Reporting...';
 
   try {
-    await api('/api/lost', {
+    const formData = new FormData();
+    formData.append('title', $('#rl-title').value);
+    formData.append('description', $('#rl-desc').value);
+    formData.append('category', $('#rl-category').value);
+    formData.append('location', $('#rl-location').value);
+    if ($('#rl-date').value) formData.append('dateLost', $('#rl-date').value);
+    if ($('#rl-email').value) formData.append('contactEmail', $('#rl-email').value);
+    if ($('#rl-tags').value) formData.append('tags', $('#rl-tags').value);
+
+    const imageFile = $('#rl-image').files[0];
+    if (imageFile) formData.append('image', imageFile);
+
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API}/api/lost`, {
       method: 'POST',
-      body: JSON.stringify({
-        title: $('#rl-title').value,
-        description: $('#rl-desc').value,
-        category: $('#rl-category').value,
-        location: $('#rl-location').value,
-        dateLost: $('#rl-date').value || undefined,
-        contactEmail: $('#rl-email').value || undefined,
-        tags: $('#rl-tags').value || undefined,
-      }),
+      headers,
+      body: formData,
     });
-    toast('Lost item reported!', 'success');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to report item');
+
+    toast('Lost item reported successfully!', 'success');
     e.target.reset();
     navigate('lost');
   } catch (err) {
@@ -284,17 +299,28 @@ async function handleReportFound(e) {
   btn.innerHTML = '<span class="spinner"></span> Reporting...';
 
   try {
-    await api('/api/found', {
+    const formData = new FormData();
+    formData.append('title', $('#rf-title').value);
+    formData.append('description', $('#rf-desc').value);
+    formData.append('category', $('#rf-category').value);
+    formData.append('locationFound', $('#rf-location').value);
+    if ($('#rf-date').value) formData.append('dateFound', $('#rf-date').value);
+
+    const imageFile = $('#rf-image').files[0];
+    if (imageFile) formData.append('image', imageFile);
+
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API}/api/found`, {
       method: 'POST',
-      body: JSON.stringify({
-        title: $('#rf-title').value,
-        description: $('#rf-desc').value,
-        category: $('#rf-category').value,
-        location: $('#rf-location').value,
-        dateFound: $('#rf-date').value || undefined,
-      }),
+      headers,
+      body: formData,
     });
-    toast('Found item reported!', 'success');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to report item');
+
+    toast('Found item reported successfully!', 'success');
     e.target.reset();
     navigate('found');
   } catch (err) {

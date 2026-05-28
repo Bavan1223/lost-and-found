@@ -63,6 +63,32 @@ const parseAIJson = (text) => {
 };
 
 // =============================================
+// HELPER — Handle AI errors gracefully with troubleshooting tips
+// =============================================
+const handleAIError = (res, error, contextMessage) => {
+  console.error(`❌ AI Error (${contextMessage}):`, error.message);
+  
+  let friendlyMessage = 'AI feature is temporarily unavailable.';
+  let fixSuggestion = undefined;
+
+  if (error.message.includes('API key not valid') || error.message.includes('API_KEY_INVALID')) {
+    friendlyMessage = 'Invalid Gemini API Key. Please verify the GEMINI_API_KEY in your .env file.';
+    fixSuggestion = 'Go to https://aistudio.google.com/ to get a free API key, and update your .env file.';
+  } else if (error.message.includes('quota') || error.message.includes('429')) {
+    friendlyMessage = 'AI rate limit / quota exceeded. Please try again in a few moments.';
+  } else if (error.message.includes('ModelService.ListModels')) {
+    friendlyMessage = 'Gemini model is not available or API key has no permissions.';
+  }
+
+  res.status(500).json({
+    success: false,
+    message: friendlyMessage,
+    fix: fixSuggestion,
+    error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+  });
+};
+
+// =============================================
 // @route   POST /api/ai/match
 // @desc    Find the best found-item matches for a lost item
 // @body    { lostItemId: "mongo_id" }
@@ -194,12 +220,7 @@ RETURN THIS EXACT JSON FORMAT (no extra text, no markdown):
     });
 
   } catch (error) {
-    console.error('AI match error:', error.message);
-    res.status(500).json({
-      success: false,
-      message: 'AI matching failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
+    handleAIError(res, error, 'matchItems');
   }
 };
 
@@ -280,12 +301,7 @@ RETURN THIS EXACT JSON FORMAT:
     });
 
   } catch (error) {
-    console.error('AI describe error:', error.message);
-    res.status(500).json({
-      success: false,
-      message: 'AI description enhancement failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
+    handleAIError(res, error, 'enhanceDescription');
   }
 };
 
@@ -330,12 +346,7 @@ Keep your answer brief (2-3 sentences max) and practical.
     });
 
   } catch (error) {
-    console.error('AI ask error:', error.message);
-    res.status(500).json({
-      success: false,
-      message: 'AI request failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
+    handleAIError(res, error, 'askAI');
   }
 };
 
