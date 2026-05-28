@@ -145,7 +145,7 @@ const validateFoundItem = [
       'keys', 'wallet', 'bag', 'sports', 'documents', 'other'
     ]).withMessage('Invalid category'),
 
-  body('location')
+  body('locationFound')
     .trim()
     .notEmpty().withMessage('Location where found is required'),
 

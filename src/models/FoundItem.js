@@ -43,6 +43,7 @@ const foundItemSchema = new mongoose.Schema(
         'wallet',
         'bag',
         'sports',
+        'documents',
         'other',
       ],
     },

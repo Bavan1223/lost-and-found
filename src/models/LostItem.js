@@ -50,6 +50,7 @@ const lostItemSchema = new mongoose.Schema(
         'wallet',
         'bag',
         'sports',
+        'documents',
         'other',
       ],
     },

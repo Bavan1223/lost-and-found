@@ -259,10 +259,15 @@
 
   <!-- ==================== AI TOOLS ==================== -->
   <div class="page" id="page-ai">
-    <div class="section-header">
+    <div class="section-header" style="flex-wrap: wrap; gap: 1rem; align-items: center;">
       <div>
         <h1 class="section-title">🤖 AI Tools</h1>
         <p class="section-desc">Powered by Google Gemini 1.5 Flash</p>
+      </div>
+      <div class="card" style="margin: 0; padding: 0.5rem 0.75rem; max-width: 400px; display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border);">
+        <span style="font-size: 0.8rem; white-space: nowrap; color: var(--text-muted);">Key:</span>
+        <input class="form-input" type="password" id="custom-gemini-key" placeholder="Paste custom AIzaSy... key" style="padding: 0.35rem 0.5rem; font-size: 0.8rem; margin: 0; min-width: 180px;">
+        <button class="btn btn-primary btn-sm" id="btn-save-gemini-key" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; white-space: nowrap;">Save</button>
       </div>
     </div>
 

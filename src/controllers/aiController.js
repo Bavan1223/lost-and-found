@@ -37,14 +37,23 @@ const FoundItem = require('../models/FoundItem');
 let genAI;
 let model;
 
-const initGemini = () => {
-  if (!process.env.GEMINI_API_KEY) {
+const initGemini = (req) => {
+  const reqKey = req && req.headers ? req.headers['x-gemini-key'] : null;
+  const apiKey = reqKey || process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
     throw new Error('GEMINI_API_KEY is not set in .env');
   }
+
+  // If a custom key is passed, we initialize a dynamic instance for this request
+  if (reqKey) {
+    const dynamicGenAI = new GoogleGenerativeAI(reqKey);
+    return dynamicGenAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  }
+
+  // Otherwise, use the global singleton
   if (!genAI) {
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // gemini-1.5-flash: fast + free tier, 1M tokens/day
-    // Use gemini-1.5-pro for better reasoning (lower free limits)
+    genAI = new GoogleGenerativeAI(apiKey);
     model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   }
   return model;
@@ -96,7 +105,7 @@ const handleAIError = (res, error, contextMessage) => {
 // =============================================
 const matchItems = async (req, res) => {
   try {
-    const aiModel = initGemini();
+    const aiModel = initGemini(req);
     const { lostItemId } = req.body;
 
     if (!lostItemId) {
@@ -243,7 +252,7 @@ const getSuggestions = async (req, res) => {
 // =============================================
 const enhanceDescription = async (req, res) => {
   try {
-    const aiModel = initGemini();
+    const aiModel = initGemini(req);
     const { title, roughDescription, category } = req.body;
 
     if (!roughDescription) {
@@ -313,7 +322,7 @@ RETURN THIS EXACT JSON FORMAT:
 // =============================================
 const askAI = async (req, res) => {
   try {
-    const aiModel = initGemini();
+    const aiModel = initGemini(req);
     const { question } = req.body;
 
     if (!question || question.trim().length < 3) {

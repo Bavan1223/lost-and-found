@@ -13,6 +13,10 @@ const $$ = (sel) => document.querySelectorAll(sel);
 async function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
+  
+  const customKey = localStorage.getItem('gemini_key');
+  if (customKey) headers['X-Gemini-Key'] = customKey;
+
   if (opts.headers) Object.assign(headers, opts.headers);
 
   const res = await fetch(`${API}${path}`, { ...opts, headers });
@@ -272,6 +276,8 @@ async function handleReportLost(e) {
 
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    const customKey = localStorage.getItem('gemini_key');
+    if (customKey) headers['X-Gemini-Key'] = customKey;
 
     const res = await fetch(`${API}/api/lost`, {
       method: 'POST',
@@ -311,6 +317,7 @@ async function handleReportFound(e) {
 
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (customKey) headers['X-Gemini-Key'] = customKey;
 
     const res = await fetch(`${API}/api/found`, {
       method: 'POST',
@@ -473,6 +480,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const navBtn = e.target.closest('[data-nav]');
     if (navBtn) navigate(navBtn.dataset.nav);
+  });
+
+  // Load saved Gemini Key if any
+  const savedKey = localStorage.getItem('gemini_key');
+  if (savedKey && $('#custom-gemini-key')) {
+    $('#custom-gemini-key').value = savedKey;
+  }
+
+  $('#btn-save-gemini-key')?.addEventListener('click', () => {
+    const keyInput = $('#custom-gemini-key');
+    const key = keyInput.value.trim();
+    if (key) {
+      localStorage.setItem('gemini_key', key);
+      toast('Custom Gemini API Key saved locally!', 'success');
+    } else {
+      localStorage.removeItem('gemini_key');
+      toast('Custom Gemini API Key removed.', 'info');
+    }
   });
 
   updateUI();
