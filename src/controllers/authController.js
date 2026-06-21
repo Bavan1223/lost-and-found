@@ -11,6 +11,7 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { sendWelcomeEmail } = require('../utils/mailer');
 
 // =============================================
 // HELPER — Generate JWT Token
@@ -59,7 +60,14 @@ const register = async (req, res) => {
     // 3. Generate a JWT for the new user
     const token = generateToken(user._id);
 
-    // 4. Send response
+    // 4. Send welcome email (non-blocking — don't await, don't fail registration if it errors)
+    // PATTERN: "Fire and forget" — we trigger it but don't wait for it to finish
+    // The user's response doesn't need to wait for an email to send successfully
+    sendWelcomeEmail(user.email, user.name).catch(err =>
+      console.error('Welcome email failed (non-fatal):', err.message)
+    );
+
+    // 5. Send response
     // HTTP 201 = "Created" (resource was successfully created)
     res.status(201).json({
       success: true,

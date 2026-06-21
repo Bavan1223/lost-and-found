@@ -317,6 +317,7 @@ async function handleReportFound(e) {
 
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    const customKey = localStorage.getItem('gemini_key');
     if (customKey) headers['X-Gemini-Key'] = customKey;
 
     const res = await fetch(`${API}/api/found`, {

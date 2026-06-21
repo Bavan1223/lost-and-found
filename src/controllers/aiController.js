@@ -19,9 +19,11 @@
 //   The assistant thinks and replies with a ranked list.
 // =============================================
 
+const mongoose = require('mongoose');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const LostItem = require('../models/LostItem');
 const FoundItem = require('../models/FoundItem');
+const { sendMatchNotification } = require('../utils/mailer');
 
 // =============================================
 // INITIALIZE GEMINI CLIENT
@@ -48,13 +50,13 @@ const initGemini = (req) => {
   // If a custom key is passed, we initialize a dynamic instance for this request
   if (reqKey) {
     const dynamicGenAI = new GoogleGenerativeAI(reqKey);
-    return dynamicGenAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    return dynamicGenAI.getGenerativeModel({ model: 'gemini-2.0-flash' }); // Updated: 1.5-flash deprecated
   }
 
   // Otherwise, use the global singleton
   if (!genAI) {
     genAI = new GoogleGenerativeAI(apiKey);
-    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' }); // Updated: 1.5-flash deprecated
   }
   return model;
 };
@@ -66,6 +68,25 @@ const initGemini = (req) => {
 // ```json\n{ ... }\n```
 // This helper strips that and parses safely.
 const parseAIJson = (text) => {
+  // Try to find the first occurrence of '{' or '[' and the last occurrence of '}' or ']'
+  const firstBrace = text.indexOf('{');
+  const firstBracket = text.indexOf('[');
+  let startIdx = -1;
+  let endIdx = -1;
+
+  if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+    startIdx = firstBrace;
+    endIdx = text.lastIndexOf('}');
+  } else if (firstBracket !== -1) {
+    startIdx = firstBracket;
+    endIdx = text.lastIndexOf(']');
+  }
+
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    const jsonStr = text.substring(startIdx, endIdx + 1);
+    return JSON.parse(jsonStr);
+  }
+
   // Remove markdown code blocks if present
   const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   return JSON.parse(cleaned);
@@ -123,13 +144,14 @@ const matchItems = async (req, res) => {
 
     // 2. Fetch recent found items (last 100, same category if possible)
     // We limit to 100 to stay within Gemini's context window efficiently
-    const query = { status: 'pending' };
+    // Found items have status 'available' (not 'pending')
+    const query = { status: 'available' };
     if (lostItem.category) query.category = lostItem.category;
 
     const foundItems = await FoundItem.find(query)
       .sort({ createdAt: -1 })
       .limit(100)
-      .select('_id title description category location dateFound');
+      .select('_id title description category locationFound dateFound');
 
     if (foundItems.length === 0) {
       return res.status(200).json({
@@ -163,7 +185,7 @@ ${JSON.stringify(foundItems.map(f => ({
   title: f.title,
   description: f.description,
   category: f.category,
-  location: f.location,
+  location: f.locationFound,
   dateFound: f.dateFound?.toDateString(),
 })), null, 2)}
 
@@ -208,7 +230,14 @@ RETURN THIS EXACT JSON FORMAT (no extra text, no markdown):
     // 6. Enrich matches with full found item data
     const enrichedMatches = await Promise.all(
       (parsed.matches || []).map(async (match) => {
-        const foundItem = await FoundItem.findById(match.foundItemId)
+        const itemId = match.foundItemId || match.id;
+        if (!itemId || !mongoose.Types.ObjectId.isValid(itemId)) {
+          return {
+            ...match,
+            foundItem: null,
+          };
+        }
+        const foundItem = await FoundItem.findById(itemId)
           .populate('reportedBy', 'name email');
         return {
           ...match,
@@ -216,6 +245,31 @@ RETURN THIS EXACT JSON FORMAT (no extra text, no markdown):
         };
       })
     );
+
+    // 7. Fire match notification emails for high-confidence matches
+    // Only send if score >= 70 (high signal — avoid spam for weak matches)
+    // We use .populate to get the lost item owner's email
+    // "Fire and forget" pattern — don't block the HTTP response
+    const lostItemWithOwner = await LostItem.findById(lostItemId).populate('reportedBy', 'name email');
+    if (lostItemWithOwner && lostItemWithOwner.reportedBy && lostItemWithOwner.reportedBy.email) {
+      const highConfidenceMatches = enrichedMatches.filter(m => m.score >= 70 && m.foundItem);
+      
+      for (const match of highConfidenceMatches) {
+        sendMatchNotification(
+          lostItemWithOwner.reportedBy.email,
+          lostItemWithOwner,           // lost item
+          match.foundItem,             // found item
+          match.score,                 // AI confidence score
+          match.reason                 // AI explanation
+        ).catch(err =>
+          console.error('Match notification email failed (non-fatal):', err.message)
+        );
+      }
+
+      if (highConfidenceMatches.length > 0) {
+        console.log(`📧 Queued ${highConfidenceMatches.length} match notification email(s) to ${lostItemWithOwner.reportedBy.email}`);
+      }
+    }
 
     res.status(200).json({
       success: true,

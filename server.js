@@ -142,6 +142,42 @@ app.get('/', (req, res) => {
 });
 
 // =============================================
+// DEV-ONLY: TEST EMAIL ROUTE
+// =============================================
+// Use this to verify your Gmail App Password is working.
+// Hit: POST /api/test-email  (only available in development)
+// Body: { "to": "your@email.com" }
+//
+// This route sends a REAL test email so you can confirm
+// Phase 6 is working before it gets called automatically.
+if (process.env.NODE_ENV !== 'production') {
+  const { sendWelcomeEmail, testEmailConnection } = require('./src/utils/mailer');
+
+  app.post('/api/test-email', async (req, res) => {
+    const to = req.body.to || process.env.EMAIL_USER;
+    try {
+      // First verify SMTP connection
+      await testEmailConnection();
+      // Then send a real welcome email as a test
+      const result = await sendWelcomeEmail(to, 'Test Student');
+      res.json({
+        success: true,
+        message: `✅ Test email sent to ${to}! Check your inbox.`,
+        result,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: '❌ Email failed — check your Gmail App Password in .env',
+        error: error.message,
+        fix: 'Go to https://myaccount.google.com/apppasswords and generate an App Password',
+      });
+    }
+  });
+}
+
+
+// =============================================
 // API ROUTES
 // =============================================
 // Each route file handles a specific "section" of our API
@@ -219,8 +255,9 @@ let dbConnected = false;
 
 
 const startServer = async () => {
-  // Start listening FIRST — server is immediately available
-  app.listen(PORT, () => {
+  // Create the HTTP server manually so we can attach error handlers
+  // This prevents the EADDRINUSE crash from being an unhandled error event
+  const server = app.listen(PORT, () => {
     console.log('');
     console.log('🎒 ======================================');
     console.log(`🚀 Server running on port ${PORT}`);
@@ -228,6 +265,32 @@ const startServer = async () => {
     console.log(`📡 URL: http://localhost:${PORT}`);
     console.log('🎒 ======================================');
     console.log('');
+  });
+
+  // ─────────────────────────────────────────
+  // HANDLE PORT ALREADY IN USE
+  // ─────────────────────────────────────────
+  // Without this, Node throws an unhandled 'error' event and crashes
+  // with a confusing stack trace. This gives a clean, helpful message.
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error('');
+      console.error(`❌ Port ${PORT} is already in use!`);
+      console.error('   Another server process is running.');
+      console.error('   Fix: Run this command to free the port:');
+      console.error(`   npx kill-port ${PORT}`);
+      console.error('   Then run: node server.js');
+      console.error('');
+    } else {
+      console.error('❌ Server error:', err.message);
+    }
+    process.exit(1);
+  });
+
+  // SIGTERM — sent by Render.com, Docker, PM2 when shutting down
+  process.on('SIGTERM', () => {
+    console.log('🔒 SIGTERM received — shutting down gracefully');
+    server.close(() => process.exit(0));
   });
 
   // Try connecting to MongoDB AFTER server is up
@@ -238,7 +301,6 @@ const startServer = async () => {
     console.log('✅ All systems operational — server + database ready!');
   } catch (error) {
     dbConnected = false;
-
     console.error('');
   }
 };
